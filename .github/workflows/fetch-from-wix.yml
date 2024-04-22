@@ -1,8 +1,8 @@
 name: Fetch Data From Wix Api
 
 on:
-  schedule:
-    - cron: '0 0 1 * *' # Run on the 1st day of every month
+  # schedule:
+  #   - cron: '0 0 1 * *' # Run on the 1st day of every month
   workflow_dispatch: # Enable manual triggering
 
 jobs:
