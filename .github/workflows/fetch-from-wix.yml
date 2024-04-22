@@ -20,5 +20,5 @@ jobs:
 
       - name: Run Node.js script
         env:
-          AGE: ${{ env.AGE }}
+          NAME: ${{ secrets.NAME }}
         run: node scripts/hello.js
