@@ -1,4 +1,4 @@
-name: Monthly Node.js Script
+name: Fetch Data From Wix Api
 
 on:
   schedule:
