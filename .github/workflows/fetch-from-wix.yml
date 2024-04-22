@@ -3,6 +3,7 @@ name: Monthly Node.js Script
 on:
   schedule:
     - cron: '0 0 1 * *' # Run on the 1st day of every month
+  workflow_dispatch: # Enable manual triggering
 
 jobs:
   run-script:
