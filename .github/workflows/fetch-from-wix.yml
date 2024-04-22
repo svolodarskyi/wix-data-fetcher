@@ -20,7 +20,7 @@ jobs:
 
       - name: Run Node.js script
         env:
-          AGE: ${{ var.AGE }} #use repository variables
+          AGE: ${{ vars.AGE }} #use repository variables
           # NAME: ${{ secrets.NAME }} - use environment secrets
           # NAME: ${{ env.NAME }} - use environment variable
         run: node scripts/hello.js
