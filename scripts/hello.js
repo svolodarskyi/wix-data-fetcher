@@ -1,3 +1,3 @@
-const name = process.env.NAME;
+const age = process.env.AGE;
 
-console.log(`Hello ${name}`);
+console.log(`Hello ${age}`);
