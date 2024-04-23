@@ -3,7 +3,6 @@ const fs = require('fs');
 const path = require('path');
 const pg = require("pg");
 
-
 const DB_USER = process.env.DB_USER;
 const DB_PASSWORD = process.env.DB_PASSWORD;
 const DB_HOST = process.env.DB_HOST;
@@ -12,16 +11,21 @@ const DB_DATABASE_NAME = process.env.DB_DATABASE_NAME;
 const DB_CERT = process.env.DB_CERT;
 const WIX_AUTH_TOKEN = process.env.WIX_AUTH_TOKEN;
 
+// Logging function
+function log(message) {
+    console.log(`[LOG] ${message}`);
+}
 
 // Save data to a JSON file
 function saveToJson(data, fileName) {
     const filePath = path.join(__dirname, `${fileName}.json`);
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-    console.log(`Data saved to ${fileName}.json`);
+    log(`Data saved to ${fileName}.json`);
 }
 
-// Save data to PostgreSQL database
-function saveToDatabase(data, tableName) {
+function connectToDB(){
+    log(`Connecting to database...`);
+    
     const config = {
         user: DB_USER,
         password: DB_PASSWORD,
@@ -35,59 +39,34 @@ function saveToDatabase(data, tableName) {
     };
 
     const client = new pg.Client(config);
+    return client
+}
+
+
+// Save data to PostgreSQL database
+function saveToDatabase(data, tableName) {
+    
+    client = connectToDB()
 
     client.connect(async function (err) {
         if (err) {
             console.error("Error connecting to database:", err);
             return;
         }
-
+        log(`Connected to database.`);
+        
         try {
-            // Insert data into the respective table
-            if (tableName === 'Orders') {
-                for (const order of data) {
-                    await client.query(`
-                        INSERT INTO Wix.Orders (
-                            Id, Number, CreatedDate, UpdatedDate, BuyerEmail,
-                            PaymentStatus, FulfillmentStatus, Currency, ShippingAddressLine,
-                            ShippingFirstName, ShippingLastName, ShippingPhone, SubtotalAmount,
-                            ShippingAmount, TaxAmount, DiscountAmount, TotalPriceAmount, TotalAmount,
-                            TotalWithGiftCardAmount, TotalWithoutGiftCardAmount, TotalAdditionalFeesAmount,
-                            PaidAmount
-                        ) VALUES (
-                            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18,
-                            $19, $20, $21
-                        );
-                    `, [
-                        order.id, order.number, order.createdDate, order.updatedDate, order.buyerEmail,
-                        order.paymentStatus, order.fulfillmentStatus, order.currency, order.shippingAddressLine,
-                        order.shippingFirstName, order.shippingLastName, order.shippingPhone, order.subtotalAmount,
-                        order.shippingAmount, order.taxAmount, order.discountAmount, order.totalPriceAmount,
-                        order.totalAmount, order.totalWithGiftCardAmount, order.totalWithoutGiftCardAmount,
-                        order.totalAdditionalFeesAmount, order.paidAmount
-                    ]);
-                }
-            } else if (tableName === 'OrderItems') {
-                for (const item of data) {
-                    await client.query(`
-                        INSERT INTO Wix.OrderItems (
-                            OrderId, ProductName, CatalogItemId, Quantity, TotalDiscountAmount,
-                            ItemTypePreset, PriceAmount, PriceBeforeDiscountsAmount,
-                            TotalPriceBeforeTaxAmount, TotalPriceAfterTaxAmount, PaymentOption,
-                            TaxableAmount, TaxRate, TotalTaxAmount, LineItemPriceAmount
-                        ) VALUES (
-                            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
-                        );
-                    `, [
-                        item.orderId, item.productName, item.catalogItemId, item.quantity, item.totalDiscountAmount,
-                        item.itemTypePreset, item.priceAmount, item.priceBeforeDiscountsAmount,
-                        item.totalPriceBeforeTaxAmount, item.totalPriceAfterTaxAmount, item.paymentOption,
-                        item.taxableAmount, item.taxRate, item.totalTaxAmount, item.lineItemPriceAmount
-                    ]);
-                }
+            log(`Truncating ${tableName} table...`);
+            
+            await client.query(`TRUNCATE TABLE Wix.${tableName}`);
+
+            log(`Inserting data into ${tableName} table...`);
+
+            for (const item of data) {
+                await client.query(generateInsertQuery(tableName), Object.values(item));
             }
 
-            console.log(`Data saved to ${tableName} table in database.`);
+            log(`Data saved to ${tableName} table in database.`);
         } catch (error) {
             console.error(`Error saving data to ${tableName} table:`, error);
         } finally {
@@ -96,6 +75,35 @@ function saveToDatabase(data, tableName) {
     });
 }
 
+// Generate INSERT query dynamically based on table name
+function generateInsertQuery(tableName) {
+    if (tableName === 'Orders') {
+        return `
+            INSERT INTO Wix.Orders (
+                Id, Number, CreatedDate, UpdatedDate, BuyerEmail,
+                PaymentStatus, FulfillmentStatus, Currency, ShippingAddressLine,
+                ShippingFirstName, ShippingLastName, ShippingPhone, SubtotalAmount,
+                ShippingAmount, TaxAmount, DiscountAmount, TotalPriceAmount, TotalAmount,
+                TotalWithGiftCardAmount, TotalWithoutGiftCardAmount, TotalAdditionalFeesAmount,
+                PaidAmount
+            ) VALUES (
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18,
+                $19, $20, $21, $22
+            );
+        `;
+    } else if (tableName === 'OrderItems') {
+        return `
+            INSERT INTO Wix.OrderItems (
+                OrderId, ProductName, CatalogItemId, Quantity, TotalDiscountAmount,
+                ItemTypePreset, PriceAmount, PriceBeforeDiscountsAmount,
+                TotalPriceBeforeTaxAmount, TotalPriceAfterTaxAmount, PaymentOption,
+                TaxableAmount, TaxRate, TotalTaxAmount, LineItemPriceAmount
+            ) VALUES (
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
+            );
+        `;
+    }
+}
 
 function parseOrders(data) {
     const orders = data.orders;
@@ -159,6 +167,8 @@ function parseOrders(data) {
 
 // Fetch orders from API
 async function fetchOrders(orders_all = { orders: [], lineItems: [] }, cursor = null, startDate = null, endDate = null) {
+    log(`Fetching orders from API...`);
+
     const apiUrl = 'https://www.wixapis.com/ecom/v1/orders/search';
     const requestData = {
         search: {
@@ -195,18 +205,21 @@ async function fetchOrders(orders_all = { orders: [], lineItems: [] }, cursor = 
         const data = response.data;
 
         const { orders, lineItems } = parseOrders(data);
+        log(`Append api data to variable`);
         orders_all.orders.push(...orders);
         orders_all.lineItems.push(...lineItems);
 
         if (response.data.metadata.hasNext) {
             const nextCursor = response.data.metadata.cursors.next;
+            log(`Retrieve next page`);
             await fetchOrders(orders_all, nextCursor, startDate, endDate);
         } else {
             //const timestamp = new Date().toISOString().replace(/[:\-T.]/g, '');
             //const odersFileName = `orders_${timestamp}`;
             //const oderLineItemsFileName = `order_line_items_${timestamp}`;
+            log(`API data retrieval completed.`);
             saveToDatabase(orders_all.orders, 'Orders');
-            saveToDatabase(orders_all.lineItems, 'LineItems');
+            saveToDatabase(orders_all.lineItems, 'OrderLineItems');
         }
     } catch (error) {
         console.error('Error:', error);
