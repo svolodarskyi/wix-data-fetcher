@@ -17,10 +17,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          
+      - name: Install pg package
+        run: npm install pg --save
 
       - name: Run Node.js script
         env:
-          AGE: ${{ vars.AGE }} #use repository variables
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_DATABASE_NAME: ${{ secrets.DB_DATABASE_NAME }}
+          DB_CERT: ${{ secrets.DB_CERT }}
+          WIX_AUTH_TOKEN: ${{ secrets.WIX_AUTH_TOKEN }}
           # NAME: ${{ secrets.NAME }} - use environment secrets
           # NAME: ${{ env.NAME }} - use environment variable
         run: node scripts/hello.js
