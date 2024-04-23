@@ -20,6 +20,9 @@ jobs:
           
       - name: Install pg package
         run: npm install pg --save
+        
+      - name: Install axios package
+        run: npm install axios
 
       - name: Run Node.js script
         env:
