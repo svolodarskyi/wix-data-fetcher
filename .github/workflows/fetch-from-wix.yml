@@ -32,4 +32,4 @@ jobs:
           WIX_AUTH_TOKEN: ${{ secrets.WIX_AUTH_TOKEN }}
           # NAME: ${{ secrets.NAME }} - use environment secrets
           # NAME: ${{ env.NAME }} - use environment variable
-        run: node scripts/hello.js
+        run: node scripts/fetch_from_wix.js
