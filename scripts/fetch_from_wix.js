@@ -23,7 +23,9 @@ function saveToJson(data, fileName) {
     log(`Data saved to ${fileName}.json`);
 }
 
-function connectToDB(){
+// Save data to PostgreSQL database
+function saveToDatabase(data, tableName) {
+    
     log(`Connecting to database...`);
     
     const config = {
@@ -39,14 +41,6 @@ function connectToDB(){
     };
 
     const client = new pg.Client(config);
-    return client
-}
-
-
-// Save data to PostgreSQL database
-function saveToDatabase(data, tableName) {
-    
-    client = connectToDB()
 
     client.connect(async function (err) {
         if (err) {
