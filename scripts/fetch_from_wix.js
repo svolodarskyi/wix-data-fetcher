@@ -213,7 +213,7 @@ async function fetchOrders(orders_all = { orders: [], lineItems: [] }, cursor = 
             //const oderLineItemsFileName = `order_line_items_${timestamp}`;
             log(`API data retrieval completed.`);
             saveToDatabase(orders_all.orders, 'Orders');
-            saveToDatabase(orders_all.lineItems, 'OrderLineItems');
+            saveToDatabase(orders_all.lineItems, 'OrderItems');
         }
     } catch (error) {
         console.error('Error:', error);
